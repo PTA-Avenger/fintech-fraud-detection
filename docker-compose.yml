@@ -1,5 +1,5 @@
-version: '3.8'
 services:
+  # 1. The Database
   db:
     image: postgres:15
     container_name: fintech_db
@@ -11,6 +11,27 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - fintech-net
+
+  # 2. The Java App (This is what was missing!)
+  app:
+    build: .
+    container_name: fintech_backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/fraud_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: password123
+    networks:
+      - fintech-net
+
+networks:
+  fintech-net:
+    driver: bridge
 
 volumes:
   db_data:
