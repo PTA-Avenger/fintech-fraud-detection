@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fintech Fraud Guard</title>
+    <style>
+        :root { --primary: #005b8e; --danger: #d9534f; --light: #f4f4f4; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--light); padding: 40px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
+        
+        .upload-section { margin: 20px 0; padding: 20px; background: #e9ecef; border-radius: 5px; display: flex; gap: 10px; align-items: center; }
+        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { opacity: 0.9; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: var(--primary); color: white; }
+        
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 0.85rem; }
+        .approved { background-color: #d4edda; color: #155724; }
+        .suspicious { background-color: #f8d7da; color: #721c24; animation: pulse 2s infinite; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🛡️ Fraud Detection Engine</h2>
+    <p>Upload a bank statement (CSV) to scan for laundering and anomalies.</p>
+
+    <div class="upload-section">
+        <input type="file" id="csvFile" accept=".csv">
+        <button onclick="upload()">Analyze Statement</button>
+    </div>
+
+    <div id="loading" style="display:none; color: #666;">⏳ Analyzing transaction patterns...</div>
+
+    <table id="resultsTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Merchant</th>
+                <th>Location</th>
+                <th>Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    async function upload() {
+        const fileInput = document.getElementById("csvFile");
+        if (!fileInput.files[0]) { alert("Please select a CSV file first!"); return; }
+
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("resultsTable").style.display = "none";
+
+        let formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        try {
+            // CALL THE JAVA API
+            let response = await fetch("http://localhost:8080/api/transactions/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!response.ok) throw new Error("API Error");
+
+            let data = await response.json();
+            let html = "";
+            let fraudCount = 0;
+
+            data.forEach(t => {
+                let isFraud = t.status === "SUSPICIOUS";
+                if(isFraud) fraudCount++;
+
+                html += `
+                    <tr style="${isFraud ? 'background: #fff0f0' : ''}">
+                        <td>${t.timestamp.replace('T', ' ')}</td>
+                        <td>${t.merchant}</td>
+                        <td>${t.location}</td>
+                        <td><strong>R ${t.amount.toFixed(2)}</strong></td>
+                        <td>
+                            <span class="status-badge ${isFraud ? 'suspicious' : 'approved'}">
+                                ${t.status}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById("tableBody").innerHTML = html;
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("resultsTable").style.display = "table";
+
+            if(fraudCount > 0) alert(`⚠️ WARNING: ${fraudCount} Suspicious Transactions Detected!`);
+
+        } catch (error) {
+            console.error(error);
+            alert("Error connecting to Backend. Is Java running?");
+            document.getElementById("loading").style.display = "none";
+        }
+    }
+</script>
+
+</body>
+</html>
