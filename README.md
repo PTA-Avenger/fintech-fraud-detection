@@ -17,7 +17,7 @@ It was engineered to demonstrate **Microservices architecture**, **Data Structur
 
 ## 🚀 Key Features & Technical Highlights
 
-### 1. ⚡ Algorithmic Optimization (The "Interview Hook")
+### 1. ⚡ Algorithmic Optimization
 * **Problem:** Scanning millions of transactions against a blacklist using a standard List results in `O(n)` time complexity, causing latency spikes.
 * **Solution:** Implemented a **HashSet** data structure for the blacklist service.
 * **Result:** Achieved **O(1) constant-time complexity** for merchant verification, ensuring the system remains performant regardless of dataset size.
